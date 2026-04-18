@@ -1,6 +1,12 @@
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
 const Sentry = require("@sentry/node");
+
+require("tsx/cjs/api").register({
+  tsconfig: path.join(__dirname, "..", "tsconfig.json"),
+});
+const { registerSygnaRoutes } = require("../server/register");
 
 const menuRoutes = require("./routes/menuRoutes");
 const orderRoutes = require("./routes/orderRoutes");
@@ -9,6 +15,8 @@ const slowRoutes = require("./routes/slowRoutes");
 const app = express();
 
 app.use(express.json());
+
+registerSygnaRoutes(app);
 
 app.get("/", (req, res) => {
   res.json({ message: "Express Food Backend is running." });
@@ -33,12 +41,12 @@ app.use(async (err, req, res, next) => {
   }
 
   try {
-    await fetch("https://jnyanu.app.n8n.cloud/webhook-test/sygna-trigger", {
+    const res2 = await fetch("http://127.0.0.1:3000/api/sentry-webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        error: err.message,
-        stack: err.stack,
+        message: err.message,
+        stacktrace: err.stack,
         route: req.path,
         method: req.method,
         timestamp: new Date().toISOString(),
@@ -46,11 +54,16 @@ app.use(async (err, req, res, next) => {
         source_code: fileContent,
       }),
     });
+    console.log("Webhook response:", res2.status, await res2.text());
   } catch (e) {
-    console.error("n8n webhook failed:", e.message);
+    console.error("sygna webhook failed:", e.message);
   }
 
-  res.status(500).json({ error: err.message });
+  if (err && err.id !== null && err.id !== undefined) {
+    res.status(500).json({ error: err.message, id: err.id });
+  } else {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = app;
