@@ -1,0 +1,409 @@
+{
+  "d73c90d2-b626-4291-9c8b-c8bccd5fbee8": {
+    "diagnosis": "Null pointer exception occurred while trying to access the 'id' property of an object that is null.\nThe object being accessed is null, likely due to a missing or incorrect data retrieval or initialization.",
+    "generatedFix": "const express = require(\"express\");\nconst fs = require(\"fs\");\nconst path = require(\"path\");\nconst Sentry = require(\"@sentry/node\");\n\nrequire(\"tsx/cjs/api\").register({\n  tsconfig: path.join(__dirname, \"..\", \"tsconfig.json\"),\n});\nconst { registerSygnaRoutes } = require(\"../server/register\");\n\nconst menuRoutes = require(\"./routes/menuRoutes\");\nconst orderRoutes = require(\"./routes/orderRoutes\");\nconst slowRoutes = require(\"./routes/slowRoutes\");\n\nconst app = express();\n\napp.use(express.json());\n\nregisterSygnaRoutes(app);\n\napp.get(\"/\", (req, res) => {\n  res.json({ message: \"Express Food Backend is running.\" });\n});\n\napp.use(\"/menu\", menuRoutes);\napp.use(\"/order\", orderRoutes);\napp.use(\"/slow\", slowRoutes);\n\napp.use(async (err, req, res, next) => {\n  Sentry.captureException(err);\n\n  // Figure out which file broke from the stack trace\n  const stackLine = err.stack?.split(\"\\n\")[1] || \"\";\n  const fileMatch = stackLine.match(/\\((.+?):\\d+:\\d+\\)/);\n  const brokenFilePath = fileMatch ? fileMatch[1] : null;\n\n  // Read the actual broken file\n  let fileContent = \"Could not read file\";\n  if (brokenFilePath && fs.existsSync(brokenFilePath)) {\n    fileContent = fs.readFileSync(brokenFilePath, \"utf8\");\n  }\n\n  try {\n    const res2 = await fetch(\"http://127.0.0.1:3000/api/sentry-webhook\", {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({\n        message: err.message,\n        stacktrace: err.stack,\n        route: req.path,\n        method: req.method,\n        timestamp: new Date().toISOString(),\n        broken_file: brokenFilePath,\n        source_code: fileContent,\n      }),\n    });\n    console.log(\"Webhook response:\", res2.status, await res2.text());\n  } catch (e) {\n    console.error(\"sygna webhook failed:\", e.message);\n  }\n\n  if (err && err.id !== null && err.id !== undefined) {\n    res.status(500).json({ error: err.message, id: err.id });\n  } else {\n    res.status(500).json({ error: err.message });\n  }\n});\n\nmodule.exports = app;",
+    "originalSource": "const express = require(\"express\");\nconst fs = require(\"fs\");\nconst path = require(\"path\");\nconst Sentry = require(\"@sentry/node\");\n\nrequire(\"tsx/cjs/api\").register({\n  tsconfig: path.join(__dirname, \"..\", \"tsconfig.json\"),\n});\nconst { registerSygnaRoutes } = require(\"../server/register\");\n\nconst menuRoutes = require(\"./routes/menuRoutes\");\nconst orderRoutes = require(\"./routes/orderRoutes\");\nconst slowRoutes = require(\"./routes/slowRoutes\");\n\nconst app = express();\n\napp.use(express.json());\n\nregisterSygnaRoutes(app);\n\napp.get(\"/\", (req, res) => {\n  res.json({ message: \"Express Food Backend is running.\" });\n});\n\napp.use(\"/menu\", menuRoutes);\napp.use(\"/order\", orderRoutes);\napp.use(\"/slow\", slowRoutes);\n\napp.use(async (err, req, res, next) => {\n  Sentry.captureException(err);\n\n  // Figure out which file broke from the stack trace\n  const stackLine = err.stack?.split(\"\\n\")[1] || \"\";\n  const fileMatch = stackLine.match(/\\((.+?):\\d+:\\d+\\)/);\n  const brokenFilePath = fileMatch ? fileMatch[1] : null;\n\n  // Read the actual broken file\n  let fileContent = \"Could not read file\";\n  if (brokenFilePath && fs.existsSync(brokenFilePath)) {\n    fileContent = fs.readFileSync(brokenFilePath, \"utf8\");\n  }\n\n  try {\n    const res2 = await fetch(\"http://127.0.0.1:3000/api/sentry-webhook\", {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({\n        message: err.message,\n        stacktrace: err.stack,\n        route: req.path,\n        method: req.method,\n        timestamp: new Date().toISOString(),\n        broken_file: brokenFilePath,\n        source_code: fileContent,\n      }),\n    });\n    console.log(\"Webhook response:\", res2.status, await res2.text());\n  } catch (e) {\n    console.error(\"sygna webhook failed:\", e.message);\n  }\n\n  if (err && err.id !== null && err.id !== undefined) {\n    res.status(500).json({ error: err.message, id: err.id });\n  } else {\n    res.status(500).json({ error: err.message });\n  }\n});\n\nmodule.exports = app;",
+    "error": "Cannot read properties of null (reading 'id')",
+    "file": "D:\\jnyan\\Autonomous\\src\\app.js",
+    "stack": "TypeError: Cannot read properties of null (reading 'id')\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:12:16\n    at Array.map (<anonymous>)\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:11:33",
+    "status": "validated",
+    "stage": "done",
+    "id": "d73c90d2-b626-4291-9c8b-c8bccd5fbee8",
+    "createdAt": "2026-04-18T05:21:03.947Z",
+    "blast": {
+      "affectedFiles": [
+        "D:/jnyan/Autonomous/src/server.js"
+      ],
+      "criticalPaths": [
+        "app.js → server.js"
+      ],
+      "impactScore": 0.12,
+      "riskLevel": "Low"
+    },
+    "validation": {
+      "passed": true,
+      "testsPassed": 1,
+      "testsFailed": 0,
+      "verdict": "SAFE",
+      "raw": {
+        "numTotalTestSuites": 2,
+        "numPassedTestSuites": 2,
+        "numFailedTestSuites": 0,
+        "numPendingTestSuites": 0,
+        "numTotalTests": 1,
+        "numPassedTests": 1,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "numTodoTests": 0,
+        "snapshot": {
+          "added": 0,
+          "failure": false,
+          "filesAdded": 0,
+          "filesRemoved": 0,
+          "filesRemovedList": [],
+          "filesUnmatched": 0,
+          "filesUpdated": 0,
+          "matched": 0,
+          "total": 0,
+          "unchecked": 0,
+          "uncheckedKeysByFile": [],
+          "unmatched": 0,
+          "updated": 0,
+          "didUpdate": false
+        },
+        "startTime": 1776489671722,
+        "success": true,
+        "testResults": [
+          {
+            "assertionResults": [
+              {
+                "ancestorTitles": [
+                  "SYGNA smoke"
+                ],
+                "fullName": "SYGNA smoke runs a real assertion",
+                "status": "passed",
+                "title": "runs a real assertion",
+                "duration": 1.40360000000004,
+                "failureMessages": [],
+                "meta": {},
+                "tags": []
+              }
+            ],
+            "startTime": 1776489672057,
+            "endTime": 1776489672058.4036,
+            "status": "passed",
+            "message": "",
+            "name": "D:/jnyan/Autonomous/tests/smoke.test.ts"
+          }
+        ]
+      }
+    },
+    "githubPrUrl": "https://github.com/Jnyanu18/sygna/pull/2",
+    "githubPrNumber": 2,
+    "githubBranch": "sygna-fix-1776489672145-d73c90d2b626"
+  },
+  "c571519c-ed44-4d4e-b7c4-2a8a4344ab18": {
+    "diagnosis": "Null pointer exception occurred while trying to access the 'id' property of an object that is null.\nThe object being accessed is null, likely due to a missing or incorrect data retrieval operation.",
+    "generatedFix": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:16416:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async createFixPullRequest (D:\\jnyan\\Autonomous\\server\\engine\\github-pr.ts:123:15)\n    at async runPipeline (D:\\jnyan\\Autonomous\\server\\engine\\pipeline.ts:116:18)",
+    "originalSource": "const express = require(\"express\");\nconst fs = require(\"fs\");\nconst path = require(\"path\");\nconst Sentry = require(\"@sentry/node\");\n\nrequire(\"tsx/cjs/api\").register({\n  tsconfig: path.join(__dirname, \"..\", \"tsconfig.json\"),\n});\nconst { registerSygnaRoutes } = require(\"../server/register\");\n\nconst menuRoutes = require(\"./routes/menuRoutes\");\nconst orderRoutes = require(\"./routes/orderRoutes\");\nconst slowRoutes = require(\"./routes/slowRoutes\");\n\nconst app = express();\n\napp.use(express.json());\n\nregisterSygnaRoutes(app);\n\napp.get(\"/\", (req, res) => {\n  res.json({ message: \"Express Food Backend is running.\" });\n});\n\napp.use(\"/menu\", menuRoutes);\napp.use(\"/order\", orderRoutes);\napp.use(\"/slow\", slowRoutes);\n\napp.use(async (err, req, res, next) => {\n  Sentry.captureException(err);\n\n  // Figure out which file broke from the stack trace\n  const stackLine = err.stack?.split(\"\\n\")[1] || \"\";\n  const fileMatch = stackLine.match(/\\((.+?):\\d+:\\d+\\)/);\n  const brokenFilePath = fileMatch ? fileMatch[1] : null;\n\n  // Read the actual broken file\n  let fileContent = \"Could not read file\";\n  if (brokenFilePath && fs.existsSync(brokenFilePath)) {\n    fileContent = fs.readFileSync(brokenFilePath, \"utf8\");\n  }\n\n  try {\n    const res2 = await fetch(\"http://127.0.0.1:3000/api/sentry-webhook\", {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({\n        message: err.message,\n        stacktrace: err.stack,\n        route: req.path,\n        method: req.method,\n        timestamp: new Date().toISOString(),\n        broken_file: brokenFilePath,\n        source_code: fileContent,\n      }),\n    });\n    console.log(\"Webhook response:\", res2.status, await res2.text());\n  } catch (e) {\n    console.error(\"sygna webhook failed:\", e.message);\n  }\n\n  if (err && err.id !== null && err.id !== undefined) {\n    res.status(500).json({ error: err.message, id: err.id });\n  } else {\n    res.status(500).json({ error: err.message });\n  }\n});\n\nmodule.exports = app;",
+    "error": "Cannot read properties of null (reading 'id')",
+    "file": "D:\\jnyan\\Autonomous\\src\\app.js",
+    "stack": "TypeError: Cannot read properties of null (reading 'id')\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:12:16\n    at Array.map (<anonymous>)\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:11:33",
+    "status": "failed",
+    "stage": "error",
+    "id": "c571519c-ed44-4d4e-b7c4-2a8a4344ab18",
+    "createdAt": "2026-04-18T05:27:50.184Z",
+    "blast": {
+      "affectedFiles": [
+        "D:/jnyan/Autonomous/src/server.js"
+      ],
+      "criticalPaths": [
+        "app.js → server.js"
+      ],
+      "impactScore": 0.12,
+      "riskLevel": "Low"
+    },
+    "validation": {
+      "passed": true,
+      "testsPassed": 1,
+      "testsFailed": 0,
+      "verdict": "SAFE",
+      "raw": {
+        "numTotalTestSuites": 2,
+        "numPassedTestSuites": 2,
+        "numFailedTestSuites": 0,
+        "numPendingTestSuites": 0,
+        "numTotalTests": 1,
+        "numPassedTests": 1,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "numTodoTests": 0,
+        "snapshot": {
+          "added": 0,
+          "failure": false,
+          "filesAdded": 0,
+          "filesRemoved": 0,
+          "filesRemovedList": [],
+          "filesUnmatched": 0,
+          "filesUpdated": 0,
+          "matched": 0,
+          "total": 0,
+          "unchecked": 0,
+          "uncheckedKeysByFile": [],
+          "unmatched": 0,
+          "updated": 0,
+          "didUpdate": false
+        },
+        "startTime": 1776490086658,
+        "success": true,
+        "testResults": [
+          {
+            "assertionResults": [
+              {
+                "ancestorTitles": [
+                  "SYGNA smoke"
+                ],
+                "fullName": "SYGNA smoke runs a real assertion",
+                "status": "passed",
+                "title": "runs a real assertion",
+                "duration": 1.9647000000000503,
+                "failureMessages": [],
+                "meta": {},
+                "tags": []
+              }
+            ],
+            "startTime": 1776490087022,
+            "endTime": 1776490087023.9646,
+            "status": "passed",
+            "message": "",
+            "name": "D:/jnyan/Autonomous/tests/smoke.test.ts"
+          }
+        ]
+      }
+    }
+  },
+  "242dd46a-4bd4-4c52-8804-53879a4093ab": {
+    "diagnosis": "Invalid JSON syntax in the request body\nExpected ':' after property name in JSON at position 3 (line 1 column 4)",
+    "generatedFix": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:16416:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async createFixPullRequest (D:\\jnyan\\Autonomous\\server\\engine\\github-pr.ts:82:18)\n    at async runPipeline (D:\\jnyan\\Autonomous\\server\\engine\\pipeline.ts:116:18)",
+    "originalSource": "/*!\n * body-parser\n * Copyright(c) 2014 Jonathan Ong\n * Copyright(c) 2014-2015 Douglas Christopher Wilson\n * MIT Licensed\n */\n\n'use strict'\n\n/**\n * Module dependencies.\n * @private\n */\n\nvar bytes = require('bytes')\nvar contentType = require('content-type')\nvar createError = require('http-errors')\nvar debug = require('debug')('body-parser:json')\nvar read = require('../read')\nvar typeis = require('type-is')\n\n/**\n * Module exports.\n */\n\nmodule.exports = json\n\n/**\n * RegExp to match the first non-space in a string.\n *\n * Allowed whitespace is defined in RFC 7159:\n *\n *    ws = *(\n *            %x20 /              ; Space\n *            %x09 /              ; Horizontal tab\n *            %x0A /              ; Line feed or New line\n *            %x0D )              ; Carriage return\n */\n\nvar FIRST_CHAR_REGEXP = /^[\\x20\\x09\\x0a\\x0d]*([^\\x20\\x09\\x0a\\x0d])/ // eslint-disable-line no-control-regex\n\nvar JSON_SYNTAX_CHAR = '#'\nvar JSON_SYNTAX_REGEXP = /#+/g\n\n/**\n * Create a middleware to parse JSON bodies.\n *\n * @param {object} [options]\n * @return {function}\n * @public\n */\n\nfunction json (options) {\n  var opts = options || {}\n\n  var limit = typeof opts.limit !== 'number'\n    ? bytes.parse(opts.limit || '100kb')\n    : opts.limit\n  var inflate = opts.inflate !== false\n  var reviver = opts.reviver\n  var strict = opts.strict !== false\n  var type = opts.type || 'application/json'\n  var verify = opts.verify || false\n\n  if (verify !== false && typeof verify !== 'function') {\n    throw new TypeError('option verify must be function')\n  }\n\n  // create the appropriate type checking function\n  var shouldParse = typeof type !== 'function'\n    ? typeChecker(type)\n    : type\n\n  function parse (body) {\n    if (body.length === 0) {\n      // special-case empty json body, as it's a common client-side mistake\n      // TODO: maybe make this configurable or part of \"strict\" option\n      return {}\n    }\n\n    if (strict) {\n      var first = firstchar(body)\n\n      if (first !== '{' && first !== '[') {\n        debug('strict violation')\n        throw createStrictSyntaxError(body, first)\n      }\n    }\n\n    try {\n      debug('parse json')\n      return JSON.parse(body, reviver)\n    } catch (e) {\n      throw normalizeJsonSyntaxError(e, {\n        message: e.message,\n        stack: e.stack\n      })\n    }\n  }\n\n  return function jsonParser (req, res, next) {\n    if (req._body) {\n      debug('body already parsed')\n      next()\n      return\n    }\n\n    req.body = req.body || {}\n\n    // skip requests without bodies\n    if (!typeis.hasBody(req)) {\n      debug('skip empty body')\n      next()\n      return\n    }\n\n    debug('content-type %j', req.headers['content-type'])\n\n    // determine if request should be parsed\n    if (!shouldParse(req)) {\n      debug('skip parsing')\n      next()\n      return\n    }\n\n    // assert charset per RFC 7159 sec 8.1\n    var charset = getCharset(req) || 'utf-8'\n    if (charset.slice(0, 4) !== 'utf-') {\n      debug('invalid charset')\n      next(createError(415, 'unsupported charset \"' + charset.toUpperCase() + '\"', {\n        charset: charset,\n        type: 'charset.unsupported'\n      }))\n      return\n    }\n\n    // read\n    read(req, res, next, parse, debug, {\n      encoding: charset,\n      inflate: inflate,\n      limit: limit,\n      verify: verify\n    })\n  }\n}\n\n/**\n * Create strict violation syntax error matching native error.\n *\n * @param {string} str\n * @param {string} char\n * @return {Error}\n * @private\n */\n\nfunction createStrictSyntaxError (str, char) {\n  var index = str.indexOf(char)\n  var partial = ''\n\n  if (index !== -1) {\n    partial = str.substring(0, index) + JSON_SYNTAX_CHAR\n\n    for (var i = index + 1; i < str.length; i++) {\n      partial += JSON_SYNTAX_CHAR\n    }\n  }\n\n  try {\n    JSON.parse(partial); /* istanbul ignore next */ throw new SyntaxError('strict violation')\n  } catch (e) {\n    return normalizeJsonSyntaxError(e, {\n      message: e.message.replace(JSON_SYNTAX_REGEXP, function (placeholder) {\n        return str.substring(index, index + placeholder.length)\n      }),\n      stack: e.stack\n    })\n  }\n}\n\n/**\n * Get the first non-whitespace character in a string.\n *\n * @param {string} str\n * @return {function}\n * @private\n */\n\nfunction firstchar (str) {\n  var match = FIRST_CHAR_REGEXP.exec(str)\n\n  return match\n    ? match[1]\n    : undefined\n}\n\n/**\n * Get the charset of a request.\n *\n * @param {object} req\n * @api private\n */\n\nfunction getCharset (req) {\n  try {\n    return (contentType.parse(req).parameters.charset || '').toLowerCase()\n  } catch (e) {\n    return undefined\n  }\n}\n\n/**\n * Normalize a SyntaxError for JSON.parse.\n *\n * @param {SyntaxError} error\n * @param {object} obj\n * @return {SyntaxError}\n */\n\nfunction normalizeJsonSyntaxError (error, obj) {\n  var keys = Object.getOwnPropertyNames(error)\n\n  for (var i = 0; i < keys.length; i++) {\n    var key = keys[i]\n    if (key !== 'stack' && key !== 'message') {\n      delete error[key]\n    }\n  }\n\n  // replace stack before message for Node.js 0.10 and below\n  error.stack = obj.stack.replace(error.message, obj.message)\n  error.message = obj.message\n\n  return error\n}\n\n/**\n * Get the simple type checker.\n *\n * @param {string} type\n * @return {function}\n */\n\nfunction typeChecker (type) {\n  return function checkType (req) {\n    return Boolean(typeis(req, type))\n  }\n}\n",
+    "error": "Expected ':' after property name in JSON at position 3 (line 1 column 4)",
+    "file": "D:\\jnyan\\Autonomous\\node_modules\\body-parser\\lib\\types\\json.js",
+    "stack": "SyntaxError: Expected ':' after property name in JSON at position 3 (line 1 column 4)\n    at JSON.parse (<anonymous>)\n    at parse (D:\\jnyan\\Autonomous\\node_modules\\body-parser\\lib\\types\\json.js:92:19)\n    at D:\\jnyan\\Autonomous\\node_modules\\body-parser\\lib\\read.js:128:18\n    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n    at invokeCallback (D:\\jnyan\\Autonomous\\node_modules\\raw-body\\index.js:238:16)\n    at done (D:\\jnyan\\Autonomous\\node_modules\\raw-body\\index.js:227:7)\n    at IncomingMessage.onEnd (D:\\jnyan\\Autonomous\\node_modules\\raw-body\\index.js:287:7)\n    at IncomingMessage.emit (node:events:508:28)\n    at endReadableNT (node:internal/streams/readable:1701:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)",
+    "status": "failed",
+    "stage": "error",
+    "id": "242dd46a-4bd4-4c52-8804-53879a4093ab",
+    "createdAt": "2026-04-18T05:28:08.355Z",
+    "blast": {
+      "affectedFiles": [],
+      "criticalPaths": [],
+      "impactScore": 0,
+      "riskLevel": "Low"
+    },
+    "validation": {
+      "passed": true,
+      "testsPassed": 1,
+      "testsFailed": 0,
+      "verdict": "SAFE",
+      "raw": {
+        "numTotalTestSuites": 2,
+        "numPassedTestSuites": 2,
+        "numFailedTestSuites": 0,
+        "numPendingTestSuites": 0,
+        "numTotalTests": 1,
+        "numPassedTests": 1,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "numTodoTests": 0,
+        "snapshot": {
+          "added": 0,
+          "failure": false,
+          "filesAdded": 0,
+          "filesRemoved": 0,
+          "filesRemovedList": [],
+          "filesUnmatched": 0,
+          "filesUpdated": 0,
+          "matched": 0,
+          "total": 0,
+          "unchecked": 0,
+          "uncheckedKeysByFile": [],
+          "unmatched": 0,
+          "updated": 0,
+          "didUpdate": false
+        },
+        "startTime": 1776490095288,
+        "success": true,
+        "testResults": [
+          {
+            "assertionResults": [
+              {
+                "ancestorTitles": [
+                  "SYGNA smoke"
+                ],
+                "fullName": "SYGNA smoke runs a real assertion",
+                "status": "passed",
+                "title": "runs a real assertion",
+                "duration": 2.40209999999999,
+                "failureMessages": [],
+                "meta": {},
+                "tags": []
+              }
+            ],
+            "startTime": 1776490095553,
+            "endTime": 1776490095555.402,
+            "status": "passed",
+            "message": "",
+            "name": "D:/jnyan/Autonomous/tests/smoke.test.ts"
+          }
+        ]
+      }
+    }
+  },
+  "4ea3329f-714b-42d7-a0e3-e3e6d2413105": {
+    "diagnosis": "Null pointer exception occurred while trying to access the 'id' property of an object that is null.\nThe object being accessed is null, likely due to a previous operation that returned null or an empty array.",
+    "generatedFix": "const express = require(\"express\");\nconst fs = require(\"fs\");\nconst path = require(\"path\");\nconst Sentry = require(\"@sentry/node\");\n\nrequire(\"tsx/cjs/api\").register({\n  tsconfig: path.join(__dirname, \"..\", \"tsconfig.json\"),\n});\nconst { registerSygnaRoutes } = require(\"../server/register\");\n\nconst menuRoutes = require(\"./routes/menuRoutes\");\nconst orderRoutes = require(\"./routes/orderRoutes\");\nconst slowRoutes = require(\"./routes/slowRoutes\");\n\nconst app = express();\n\napp.use(express.json());\n\nregisterSygnaRoutes(app);\n\napp.get(\"/\", (req, res) => {\n  res.json({ message: \"Express Food Backend is running.\" });\n});\n\napp.use(\"/menu\", menuRoutes);\napp.use(\"/order\", orderRoutes);\napp.use(\"/slow\", slowRoutes);\n\napp.use(async (err, req, res, next) => {\n  Sentry.captureException(err);\n\n  // Figure out which file broke from the stack trace\n  const stackLine = err.stack?.split(\"\\n\")[1] || \"\";\n  const fileMatch = stackLine.match(/\\((.+?):\\d+:\\d+\\)/);\n  const brokenFilePath = fileMatch ? fileMatch[1] : null;\n\n  // Read the actual broken file\n  let fileContent = \"Could not read file\";\n  if (brokenFilePath && fs.existsSync(brokenFilePath)) {\n    fileContent = fs.readFileSync(brokenFilePath, \"utf8\");\n  }\n\n  try {\n    const res2 = await fetch(\"http://127.0.0.1:3000/api/sentry-webhook\", {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({\n        message: err.message,\n        stacktrace: err.stack,\n        route: req.path,\n        method: req.method,\n        timestamp: new Date().toISOString(),\n        broken_file: brokenFilePath,\n        source_code: fileContent,\n      }),\n    });\n    console.log(\"Webhook response:\", res2.status, await res2.text());\n  } catch (e) {\n    console.error(\"sygna webhook failed:\", e.message);\n  }\n\n  if (err && err.id !== null && err.id !== undefined) {\n    res.status(500).json({ error: err.message, id: err.id });\n  } else {\n    res.status(500).json({ error: err.message });\n  }\n});\n\nmodule.exports = app;",
+    "originalSource": "const express = require(\"express\");\nconst fs = require(\"fs\");\nconst path = require(\"path\");\nconst Sentry = require(\"@sentry/node\");\n\nrequire(\"tsx/cjs/api\").register({\n  tsconfig: path.join(__dirname, \"..\", \"tsconfig.json\"),\n});\nconst { registerSygnaRoutes } = require(\"../server/register\");\n\nconst menuRoutes = require(\"./routes/menuRoutes\");\nconst orderRoutes = require(\"./routes/orderRoutes\");\nconst slowRoutes = require(\"./routes/slowRoutes\");\n\nconst app = express();\n\napp.use(express.json());\n\nregisterSygnaRoutes(app);\n\napp.get(\"/\", (req, res) => {\n  res.json({ message: \"Express Food Backend is running.\" });\n});\n\napp.use(\"/menu\", menuRoutes);\napp.use(\"/order\", orderRoutes);\napp.use(\"/slow\", slowRoutes);\n\napp.use(async (err, req, res, next) => {\n  Sentry.captureException(err);\n\n  // Figure out which file broke from the stack trace\n  const stackLine = err.stack?.split(\"\\n\")[1] || \"\";\n  const fileMatch = stackLine.match(/\\((.+?):\\d+:\\d+\\)/);\n  const brokenFilePath = fileMatch ? fileMatch[1] : null;\n\n  // Read the actual broken file\n  let fileContent = \"Could not read file\";\n  if (brokenFilePath && fs.existsSync(brokenFilePath)) {\n    fileContent = fs.readFileSync(brokenFilePath, \"utf8\");\n  }\n\n  try {\n    const res2 = await fetch(\"http://127.0.0.1:3000/api/sentry-webhook\", {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\" },\n      body: JSON.stringify({\n        message: err.message,\n        stacktrace: err.stack,\n        route: req.path,\n        method: req.method,\n        timestamp: new Date().toISOString(),\n        broken_file: brokenFilePath,\n        source_code: fileContent,\n      }),\n    });\n    console.log(\"Webhook response:\", res2.status, await res2.text());\n  } catch (e) {\n    console.error(\"sygna webhook failed:\", e.message);\n  }\n\n  if (err && err.id !== null && err.id !== undefined) {\n    res.status(500).json({ error: err.message, id: err.id });\n  } else {\n    res.status(500).json({ error: err.message });\n  }\n});\n\nmodule.exports = app;",
+    "error": "Cannot read properties of null (reading 'id')",
+    "file": "D:\\jnyan\\Autonomous\\src\\app.js",
+    "stack": "TypeError: Cannot read properties of null (reading 'id')\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:12:16\n    at Array.map (<anonymous>)\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:11:33",
+    "status": "validated",
+    "stage": "done",
+    "id": "4ea3329f-714b-42d7-a0e3-e3e6d2413105",
+    "createdAt": "2026-04-18T05:50:12.685Z",
+    "blast": {
+      "affectedFiles": [
+        "D:/jnyan/Autonomous/src/server.js"
+      ],
+      "criticalPaths": [
+        "app.js → server.js"
+      ],
+      "impactScore": 0.12,
+      "riskLevel": "Low"
+    },
+    "validation": {
+      "passed": true,
+      "testsPassed": 1,
+      "testsFailed": 0,
+      "verdict": "SAFE",
+      "raw": {
+        "numTotalTestSuites": 2,
+        "numPassedTestSuites": 2,
+        "numFailedTestSuites": 0,
+        "numPendingTestSuites": 0,
+        "numTotalTests": 1,
+        "numPassedTests": 1,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "numTodoTests": 0,
+        "snapshot": {
+          "added": 0,
+          "failure": false,
+          "filesAdded": 0,
+          "filesRemoved": 0,
+          "filesRemovedList": [],
+          "filesUnmatched": 0,
+          "filesUpdated": 0,
+          "matched": 0,
+          "total": 0,
+          "unchecked": 0,
+          "uncheckedKeysByFile": [],
+          "unmatched": 0,
+          "updated": 0,
+          "didUpdate": false
+        },
+        "startTime": 1776491426231,
+        "success": true,
+        "testResults": [
+          {
+            "assertionResults": [
+              {
+                "ancestorTitles": [
+                  "SYGNA smoke"
+                ],
+                "fullName": "SYGNA smoke runs a real assertion",
+                "status": "passed",
+                "title": "runs a real assertion",
+                "duration": 2.496099999999956,
+                "failureMessages": [],
+                "meta": {},
+                "tags": []
+              }
+            ],
+            "startTime": 1776491426614,
+            "endTime": 1776491426616.496,
+            "status": "passed",
+            "message": "",
+            "name": "D:/jnyan/Autonomous/tests/smoke.test.ts"
+          }
+        ]
+      }
+    },
+    "githubPrUrl": "https://github.com/Jnyanu18/sygna/pull/3",
+    "githubPrNumber": 3,
+    "githubBranch": "sygna-fix-1776491426701-4ea3329f714b"
+  },
+  "01ad4e65-7d4b-4faf-8a0b-58802c51a61f": {
+    "diagnosis": "Null pointer exception in menu mapping\nmenu array contains null/undefined item",
+    "generatedFix": "const express = require(\"express\");\r\nconst db = require(\"../db/fakeDb\");\r\n\r\nconst router = express.Router();\r\n\r\nrouter.get(\"/\", async (req, res, next) => {\r\n  try {\r\n    const menu = await db.getMenuItems();\r\n\r\n    const normalizedMenu = menu.filter(item => item !== null && item !== undefined).map((item) => ({\r\n      id: item.id,\r\n      name: item.name.toUpperCase(),\r\n      price: item.price,\r\n    }));\r\n\r\n    res.json(normalizedMenu);\r\n  } catch (err) {\r\n    next(err);\r\n  }\r\n});\r\n\r\nmodule.exports = router;",
+    "originalSource": "const express = require(\"express\");\r\nconst db = require(\"../db/fakeDb\");\r\n\r\nconst router = express.Router();\r\n\r\nrouter.get(\"/\", async (req, res, next) => {\r\n  try {\r\n    const menu = await db.getMenuItems();\r\n\r\n    // Intentional bug: this will crash when an item is null/undefined.\r\n    const normalizedMenu = menu.map((item) => ({\r\n      id: item.id,\r\n      name: item.name.toUpperCase(),\r\n      price: item.price,\r\n    }));\r\n\r\n    res.json(normalizedMenu);\r\n  } catch (err) {\r\n    next(err);\r\n  }\r\n});\r\n\r\nmodule.exports = router;\r\n",
+    "error": "Cannot read properties of null (reading 'id')",
+    "file": "D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js",
+    "stack": "TypeError: Cannot read properties of null (reading 'id')\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:12:16\n    at Array.map (<anonymous>)\n    at D:\\jnyan\\Autonomous\\src\\routes\\menuRoutes.js:11:33",
+    "status": "validated",
+    "stage": "done",
+    "id": "01ad4e65-7d4b-4faf-8a0b-58802c51a61f",
+    "createdAt": "2026-04-18T06:04:52.035Z",
+    "blast": {
+      "affectedFiles": [
+        "D:/jnyan/Autonomous/src/app.js",
+        "D:/jnyan/Autonomous/src/server.js"
+      ],
+      "criticalPaths": [
+        "menuRoutes.js → app.js",
+        "menuRoutes.js → server.js"
+      ],
+      "impactScore": 0.24,
+      "riskLevel": "Low"
+    },
+    "validation": {
+      "passed": true,
+      "testsPassed": 1,
+      "testsFailed": 0,
+      "verdict": "SAFE",
+      "raw": {
+        "numTotalTestSuites": 2,
+        "numPassedTestSuites": 2,
+        "numFailedTestSuites": 0,
+        "numPendingTestSuites": 0,
+        "numTotalTests": 1,
+        "numPassedTests": 1,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "numTodoTests": 0,
+        "snapshot": {
+          "added": 0,
+          "failure": false,
+          "filesAdded": 0,
+          "filesRemoved": 0,
+          "filesRemovedList": [],
+          "filesUnmatched": 0,
+          "filesUpdated": 0,
+          "matched": 0,
+          "total": 0,
+          "unchecked": 0,
+          "uncheckedKeysByFile": [],
+          "unmatched": 0,
+          "updated": 0,
+          "didUpdate": false
+        },
+        "startTime": 1776492303686,
+        "success": true,
+        "testResults": [
+          {
+            "assertionResults": [
+              {
+                "ancestorTitles": [
+                  "SYGNA smoke"
+                ],
+                "fullName": "SYGNA smoke runs a real assertion",
+                "status": "passed",
+                "title": "runs a real assertion",
+                "duration": 3.980899999999963,
+                "failureMessages": [],
+                "meta": {},
+                "tags": []
+              }
+            ],
+            "startTime": 1776492304086,
+            "endTime": 1776492304089.981,
+            "status": "passed",
+            "message": "",
+            "name": "D:/jnyan/Autonomous/tests/smoke.test.ts"
+          }
+        ]
+      }
+    },
+    "githubPrUrl": "https://github.com/Jnyanu18/sygna/pull/4",
+    "githubPrNumber": 4,
+    "githubBranch": "sygna-fix-1776492304168-01ad4e657d4b"
+  }
+}

@@ -1,9 +1,16 @@
+require("dotenv").config();
+
 const Sentry = require("@sentry/node");
 
-Sentry.init({
-  dsn: "https://b07a74b924e73f90b3c47d9356b8e3a1@o4511224809717760.ingest.de.sentry.io/4511224815485008",
-  tracesSampleRate: 1.0,
-});
+const sentryDsn = process.env.SENTRY_DSN;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? 1),
+  });
+} else {
+  console.warn("SENTRY_DSN not set — error reporting to Sentry is disabled.");
+}
 
 const app = require("./app");
 

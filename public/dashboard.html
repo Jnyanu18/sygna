@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SYGNA v1 — tasks</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #0f0f12;
+        color: #e8e8ee;
+      }
+      body {
+        margin: 0;
+        padding: 1.5rem;
+        max-width: 960px;
+        margin-inline: auto;
+      }
+      h1 {
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .task {
+        border: 1px solid #2a2a33;
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 0.75rem 0;
+        background: #16161c;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+      .stage {
+        color: #7dd3fc;
+      }
+      .err {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        opacity: 0.75;
+        word-break: break-word;
+      }
+      a {
+        color: #93c5fd;
+      }
+      .actions {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      button {
+        cursor: pointer;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #3f3f4d;
+        background: #252530;
+        color: #e8e8ee;
+        font-size: 0.85rem;
+      }
+      button:hover {
+        background: #2f2f3d;
+      }
+      .pr {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SYGNA pipeline</h1>
+    <p>
+      Polling <a href="/api/sygna/tasks">/api/sygna/tasks</a> every 3s — POST Sentry
+      events to <code>/api/sentry-webhook</code>. Set
+      <code>GITHUB_TOKEN</code> + <code>GITHUB_REPOSITORY</code> for auto PR (SAFE +
+      Low risk).
+    </p>
+    <div id="root"></div>
+    <script>
+      function esc(s) {
+        return String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      async function approveTask(id) {
+        const r = await fetch("/api/sygna/tasks/" + encodeURIComponent(id) + "/approve", {
+          method: "POST",
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) alert(j.error || r.status);
+        else poll();
+      }
+      async function denyTask(id) {
+        if (!confirm("Deny this fix?")) return;
+        const r = await fetch("/api/sygna/tasks/" + encodeURIComponent(id) + "/deny", {
+          method: "POST",
+        });
+        if (!r.ok) alert(await r.text());
+        else poll();
+      }
+      async function poll() {
+        const r = await fetch("/api/sygna/tasks");
+        const tasks = await r.json();
+        const el = document.getElementById("root");
+        if (!tasks.length) {
+          el.innerHTML = "<p>No tasks yet.</p>";
+          return;
+        }
+        el.innerHTML = tasks
+          .map((t) => {
+            const prLine = t.githubPrUrl
+              ? `<div class="pr">PR: <a href="${esc(t.githubPrUrl)}" target="_blank" rel="noopener">#${esc(String(t.githubPrNumber ?? ""))}</a></div>`
+              : t.githubPrError
+                ? `<div class="pr" style="opacity:.85">PR error: ${esc(t.githubPrError.slice(0, 200))}</div>`
+                : "";
+            const actions =
+              t.status === "blocked"
+                ? `<div class="actions">
+                    <button type="button" data-task="${esc(t.id)}" class="btn-approve">Open PR (approve)</button>
+                    <button type="button" data-task="${esc(t.id)}" class="btn-deny">Deny</button>
+                  </div>`
+                : "";
+            return `
+          <article class="task">
+            <div class="meta">
+              <span><strong>${esc(t.id)}</strong></span>
+              <span class="stage">${esc(t.stage)}</span>
+              <span>${esc(t.status)}</span>
+            </div>
+            <div class="err">${esc((t.error || "").slice(0, 240))}</div>
+            ${prLine}
+            ${actions}
+          </article>`;
+          })
+          .join("");
+      }
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLElement)) return;
+        const id = t.dataset.task;
+        if (!id) return;
+        if (t.classList.contains("btn-approve")) approveTask(id);
+        if (t.classList.contains("btn-deny")) denyTask(id);
+      });
+      poll();
+      setInterval(poll, 3000);
+    </script>
+  </body>
+</html>
