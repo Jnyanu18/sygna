@@ -7,12 +7,13 @@ router.get("/", async (req, res, next) => {
   try {
     const menu = await db.getMenuItems();
 
-    // Intentional bug: this will crash when an item is null/undefined.
-    const normalizedMenu = menu.map((item) => ({
-      id: item.id,
-      name: item.name.toUpperCase(),
-      price: item.price,
-    }));
+    const normalizedMenu = menu
+      .filter((item) => item !== null && item !== undefined)
+      .map((item) => ({
+        id: item.id,
+        name: item.name.toUpperCase(),
+        price: item.price,
+      }));
 
     res.json(normalizedMenu);
   } catch (err) {
